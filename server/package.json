@@ -2,9 +2,9 @@
   "name": "server",
   "version": "1.0.0",
   "description": "",
-  "main": "app.ts",
+  "type": "module",
   "scripts": {
-    "start": "ts-node app.ts"
+    "start": "node --no-warnings=ExperimentalWarning --loader ts-node/esm src/app.ts"
   },
   "author": "",
   "license": "ISC",
