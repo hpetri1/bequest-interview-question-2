@@ -1,7 +1,14 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
-import { Database } from "./types.js";
+import { Database, PostRequestBody } from "./types.js";
+import * as Yup from "yup";
+import DOMPurify from "dompurify";
+import { JSDOM } from "jsdom";
+import { validationSchema } from "./utils/validationSchema.js";
+
+const window = new JSDOM("").window;
+const purify = DOMPurify(window);
 
 const PORT = 8080;
 const app = express();
@@ -18,18 +25,32 @@ app.use(express.json());
 
 // Routes
 
-app.get("/", (req: Request, res: Response): void => {
+app.get("/", (req: Request, res: Response<Database>): void => {
   res.json(database);
 });
 
-app.post("/", (req: Request, res: Response): void => {
-  if (typeof req.body.data === "string") {
-    database.data = req.body.data;
-    res.sendStatus(200);
-  } else {
-    res.status(400).json({ error: "Invalid data format" });
+app.post(
+  "/",
+  async (
+    req: Request<{}, {}, PostRequestBody>,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const sanitizedData = purify.sanitize(req.body.data);
+
+      await validationSchema.validate({ data: sanitizedData });
+
+      database.data = sanitizedData;
+      res.sendStatus(200);
+    } catch (error) {
+      if (error instanceof Yup.ValidationError) {
+        res.status(400).json({ error: error.message });
+      } else {
+        res.status(500).json({ error: "Internal Server Error" });
+      }
+    }
   }
-});
+);
 
 app.listen(PORT, (): void => {
   console.log("Server running on port " + PORT);
