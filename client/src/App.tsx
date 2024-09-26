@@ -1,34 +1,43 @@
 import React, { useEffect, useState } from "react";
+import { ApiResponse } from "./types";
 
 const API_URL = "http://localhost:8080";
 
 function App() {
-  const [data, setData] = useState<string>();
+  const [data, setData] = useState<string | undefined>("");
 
   useEffect(() => {
     getData();
   }, []);
 
-  const getData = async () => {
-    const response = await fetch(API_URL);
-    const { data } = await response.json();
-    setData(data);
+  const getData = async (): Promise<void> => {
+    try {
+      const response = await fetch(API_URL);
+      const jsonData: ApiResponse = await response.json();
+      setData(jsonData.data);
+    } catch (error) {
+      console.error("Error fetching data");
+    }
   };
 
-  const updateData = async () => {
-    await fetch(API_URL, {
-      method: "POST",
-      body: JSON.stringify({ data }),
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-    });
+  const updateData = async (): Promise<void> => {
+    try {
+      await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({ data }),
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      });
 
-    await getData();
+      await getData();
+    } catch (error) {
+      console.error("Error updating data");
+    }
   };
 
-  const verifyData = async () => {
+  const verifyData = async (): Promise<void> => {
     throw new Error("Not implemented");
   };
 
