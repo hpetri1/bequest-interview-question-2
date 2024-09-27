@@ -113,6 +113,7 @@ function App() {
     >
       <div>Saved Data</div>
       <input
+        id="data-input"
         style={{ fontSize: "30px" }}
         type="text"
         value={data.data}
