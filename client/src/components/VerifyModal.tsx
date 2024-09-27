@@ -39,11 +39,11 @@ const VerifyModal: React.FC<VerifyModalProps> = ({
 
           <ModalFooter>
             <Button colorScheme="blue" mr={3} onClick={onClose}>
-              No
+              Close
             </Button>
             {isChanged && (
               <Button colorScheme="red" mr={3} onClick={onConfirm}>
-                Revert
+                Confirm
               </Button>
             )}
           </ModalFooter>
