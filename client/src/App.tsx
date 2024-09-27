@@ -3,6 +3,8 @@ import DOMPurify from "dompurify";
 import { InputData } from "./types";
 import { validationSchema } from "./utils/validation.ts";
 import { decryptData, encryptData, generateHash } from "./utils/security.ts";
+import VerifyModal from "./components/VerifyModal.tsx";
+import { Flex, Input, Button, Text, useDisclosure } from "@chakra-ui/react";
 
 const API_URL = "http://localhost:8080";
 
@@ -16,6 +18,8 @@ function App() {
     hash: "",
   });
   const [error, setError] = useState<string | null>(null);
+  const [changed, setChanged] = useState<boolean>(false);
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   useEffect(() => {
     getData();
@@ -96,51 +100,77 @@ function App() {
     const newHash = generateHash(sanitizedData);
     const expectedHash = initialData.hash;
     if (newHash === expectedHash) {
-      alert("Data has NOT changed!");
+      setChanged(false);
+      onOpen();
     } else {
-      alert("Data has changed!");
+      setChanged(true);
+      onOpen();
     }
   };
 
+  const undoUpdate = () => {
+    setData(initialData);
+    onClose();
+  };
+
   return (
-    <div
-      style={{
-        width: "100vw",
-        height: "100vh",
-        display: "flex",
-        position: "absolute",
-        padding: 0,
-        justifyContent: "center",
-        alignItems: "center",
-        flexDirection: "column",
-        gap: "20px",
-        fontSize: "30px",
-      }}
+    <Flex
+      w="100vw"
+      h="100vh"
+      position="absolute"
+      p={0}
+      justify="center"
+      align="center"
+      flexDirection="column"
+      gap="20px"
+      fontSize="30px"
     >
-      <div>Saved Data</div>
-      <input
-        id="data-input"
-        style={{ fontSize: "30px" }}
-        type="text"
-        value={data.data}
-        onChange={(e) => {
-          setData({
-            data: e.target.value,
-            hash: "",
-          });
-          setError(null);
-        }}
-      />
-      {error && <div style={{ color: "red", fontSize: "16px" }}>{error}</div>}{" "}
-      <div style={{ display: "flex", gap: "10px" }}>
-        <button style={{ fontSize: "20px" }} onClick={updateData}>
+      <Text fontSize="30px">Saved Data</Text>
+      <Flex>
+        <Input
+          borderColor="black"
+          id="data-input"
+          fontSize="30px"
+          value={data.data}
+          onChange={(e) => {
+            setData({
+              data: e.target.value,
+              hash: "",
+            });
+            setError(null);
+          }}
+        />
+      </Flex>
+      {error && (
+        <Text color="red" fontSize="16px">
+          {error}
+        </Text>
+      )}
+      <Flex gap="10px">
+        <Button
+          fontSize="20px"
+          colorScheme="blue"
+          variant="outline"
+          onClick={updateData}
+        >
           Update Data
-        </button>
-        <button style={{ fontSize: "20px" }} onClick={verifyData}>
+        </Button>
+        <Button
+          fontSize="20px"
+          colorScheme="blue"
+          variant="outline"
+          onClick={verifyData}
+        >
           Verify Data
-        </button>
-      </div>
-    </div>
+        </Button>
+        <VerifyModal
+          isOpen={isOpen}
+          onClose={onClose}
+          onConfirm={undoUpdate}
+          isChanged={changed}
+        />
+      </Flex>
+    </Flex>
   );
 }
 
