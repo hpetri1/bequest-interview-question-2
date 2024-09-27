@@ -15,7 +15,7 @@ There are several robust preventative measures combined with effective recovery 
 can ensure that the system maintains the integrity of critical user data.
 **This poject includes a very simple one:**
 
-1. The user is able to reset their previous data, if it has been changed, once they clck the 'Veryfy Data' button and confirm the action'.
+1. The user is able to reset their previous data, if it has been changed, once they click the 'Verify Data' button and confirm the action.
 
 Edit this repo to answer these two questions using any technologies you'd like, there any many possible solutions. Feel free to add comments.
 
