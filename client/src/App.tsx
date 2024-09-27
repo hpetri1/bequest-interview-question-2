@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import DOMPurify from "dompurify";
 import { InputData } from "./types";
 import { validationSchema } from "./utils/validation.ts";
-import { generateHash } from "./utils/generateHash.ts";
+import { decryptData, encryptData, generateHash } from "./utils/security.ts";
 
 const API_URL = "http://localhost:8080";
 
@@ -25,7 +25,12 @@ function App() {
     try {
       const response = await fetch(API_URL);
       const jsonData: InputData = await response.json();
-      const sanitizedData = DOMPurify.sanitize(jsonData.data || "");
+
+      // Decrypt the data received from the server
+      const decryptedData = decryptData(jsonData.data);
+      // Sanitize the decrypted data
+      const sanitizedData = DOMPurify.sanitize(decryptedData || "");
+
       setInitialData({
         data: sanitizedData,
         hash: jsonData.hash || "",
@@ -61,11 +66,12 @@ function App() {
       return;
     }
 
+    const encryptedData = encryptData(sanitizedData);
     try {
       const response = await fetch(API_URL, {
         method: "POST",
         body: JSON.stringify({
-          data: sanitizedData,
+          data: encryptedData,
           hash: newHash,
         } as InputData),
         headers: {
