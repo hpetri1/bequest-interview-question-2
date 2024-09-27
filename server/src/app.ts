@@ -5,14 +5,18 @@ import { Database, PostRequestBody } from "./types.js";
 import * as Yup from "yup";
 import DOMPurify from "dompurify";
 import { JSDOM } from "jsdom";
-import { validationSchema } from "./utils/validationSchema.js";
+import { validateData } from "./utils/validation.js";
+import { generateHash } from "./utils/generateHash.js";
 
 const window = new JSDOM("").window;
 const purify = DOMPurify(window);
 
 const PORT = 8080;
 const app = express();
-const database: Database = { data: "Hello World" };
+const database: Database = {
+  data: "Hello World",
+  hash: "a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e",
+};
 
 app.use(helmet());
 app.use(
@@ -37,10 +41,16 @@ app.post(
   ): Promise<void> => {
     try {
       const sanitizedData = purify.sanitize(req.body.data);
+      const isValid = await validateData(sanitizedData);
+      if (!isValid) return;
 
-      await validationSchema.validate({ data: sanitizedData });
+      const expectedHash = generateHash(sanitizedData);
+      const newHash = req.body.hash;
 
-      database.data = sanitizedData;
+      if (expectedHash === newHash) {
+        database.data = sanitizedData;
+        database.hash = newHash;
+      }
       res.sendStatus(200);
     } catch (error) {
       if (error instanceof Yup.ValidationError) {

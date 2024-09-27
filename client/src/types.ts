@@ -1,3 +1,4 @@
-export type ApiResponse = {
+export type InputData = {
   data: string;
+  hash: string;
 };

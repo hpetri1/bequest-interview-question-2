@@ -1,12 +1,20 @@
 import { useEffect, useState } from "react";
 import DOMPurify from "dompurify";
-import { ApiResponse } from "./types";
-import { validationSchema } from "./utils/validationSchema.ts";
+import { InputData } from "./types";
+import { validationSchema } from "./utils/validation.ts";
+import { generateHash } from "./utils/generateHash.ts";
 
 const API_URL = "http://localhost:8080";
 
 function App() {
-  const [data, setData] = useState<string>("");
+  const [initialData, setInitialData] = useState<InputData>({
+    data: "",
+    hash: "",
+  });
+  const [data, setData] = useState<InputData>({
+    data: "",
+    hash: "",
+  });
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -16,8 +24,16 @@ function App() {
   const getData = async (): Promise<void> => {
     try {
       const response = await fetch(API_URL);
-      const jsonData: ApiResponse = await response.json();
-      setData(DOMPurify.sanitize(jsonData.data || ""));
+      const jsonData: InputData = await response.json();
+      const sanitizedData = DOMPurify.sanitize(jsonData.data || "");
+      setInitialData({
+        data: sanitizedData,
+        hash: jsonData.hash || "",
+      });
+      setData({
+        data: sanitizedData,
+        hash: jsonData.hash || "",
+      });
     } catch (error) {
       console.error("Error fetching data");
     }
@@ -35,20 +51,30 @@ function App() {
   };
 
   const updateData = async (): Promise<void> => {
-    const isValid = await validateData(data);
+    const isValid = await validateData(data.data);
     if (!isValid) return;
 
-    const sanitizedData = DOMPurify.sanitize(data);
+    const sanitizedData = DOMPurify.sanitize(data.data);
+    const newHash = generateHash(sanitizedData);
+
+    if (initialData.hash === newHash) {
+      return;
+    }
 
     try {
-      await fetch(API_URL, {
+      const response = await fetch(API_URL, {
         method: "POST",
-        body: JSON.stringify({ data: sanitizedData }),
+        body: JSON.stringify({
+          data: sanitizedData,
+          hash: newHash,
+        } as InputData),
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
         },
       });
+
+      if (!response.ok) throw new Error("Error updating data");
 
       await getData();
     } catch (error) {
@@ -56,7 +82,19 @@ function App() {
     }
   };
 
-  const verifyData = async (): Promise<void> => {};
+  const verifyData = async (): Promise<void> => {
+    const isValid = await validateData(data.data);
+    if (!isValid) return;
+
+    const sanitizedData = DOMPurify.sanitize(data.data);
+    const newHash = generateHash(sanitizedData);
+    const expectedHash = initialData.hash;
+    if (newHash === expectedHash) {
+      alert("Data has NOT changed!");
+    } else {
+      alert("Data has changed!");
+    }
+  };
 
   return (
     <div
@@ -77,9 +115,12 @@ function App() {
       <input
         style={{ fontSize: "30px" }}
         type="text"
-        value={data}
+        value={data.data}
         onChange={(e) => {
-          setData(e.target.value);
+          setData({
+            data: e.target.value,
+            hash: "",
+          });
           setError(null);
         }}
       />
